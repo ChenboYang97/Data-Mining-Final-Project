@@ -1,0 +1,365 @@
+---
+title: "Fianl Project"
+author: "Group 8"
+date: "11/26/2021"
+output: html_document
+---
+
+```{r}
+#Load libraries
+library(tidyverse)
+library(ggcorrplot)
+```
+
+# Load data
+
+```{r}
+accidents = read_csv('accidents_in_2016.csv')
+#summary(accidents)
+```
+
+# Character Variables
+
+```{r}
+# Define the summarize_character function
+summarize_character = function(dataset) {
+  
+  dataset = select_if(dataset, is.character)
+  summary.table = data.frame(Attribute = names(dataset))
+  
+  summary.table = summary.table %>% 
+    mutate('Missing Values' = apply(dataset, 2, function (x) sum(is.na(x))),
+           'Unique Values' = apply(dataset, 2, function (x) length(unique(x))),
+    )
+  summary.table
+}
+
+summarize_character(accidents)
+```
+
+### Drop Columns and NAs
+
+```{r}
+# Drop the columns we don't need
+accidents = accidents %>% 
+  select(-ID,-Description,-Country,-Airport_Code)
+
+# In City,Zipcode,Wind_Direction,Weather_Condition,Sunrise_Sunset,Civil_Twilight,Nautical_Twilight,Astronomical_Twilight
+# Drop the NAs in these columns
+accidents = accidents %>% drop_na(City,Zipcode,Weather_Condition,Wind_Direction,Timezone)
+```
+
+
+### Wind_Direction column
+
+Since there are too many unique values in Wind_Direction which are not usual, so we decide to check this column.
+
+```{r}
+accidents %>% 
+  group_by(Wind_Direction) %>%
+  summarize(count=n())
+```
+
+After finding some resources by Google and the result above, we found some values are the same, so we combine these values.
+Resource: https://www7.ncdc.noaa.gov/climvis/help_wind.html
+
+```{r}
+# Combine "Variable" and "VAR", "South" and "S",...
+accidents$Wind_Direction[accidents$Wind_Direction == 'Variable' ] = 'VAR'
+accidents$Wind_Direction[accidents$Wind_Direction == 'South' ] = 'S'
+accidents$Wind_Direction[accidents$Wind_Direction == 'Calm' ] = 'CALM'
+accidents$Wind_Direction[accidents$Wind_Direction == 'East' ] = 'E'
+accidents$Wind_Direction[accidents$Wind_Direction == 'North' ] = 'N'
+accidents$Wind_Direction[accidents$Wind_Direction == 'West' ] = 'W'
+
+accidents %>% 
+  group_by(Wind_Direction) %>%
+  summarize(count=n())
+```
+
+### Weather_Condition column
+
+Since there are too many unique values in Weather_Condition which are not usual, so we decide to check this column.
+
+```{r}
+accidents %>% 
+  group_by(Weather_Condition) %>%
+  summarize(count=n())
+```
+
+Too many types of weather condition would affect the power of our model, but this information is very important for our analysis. So we tried to find some resources and combine all weather conditions into several broad types.
+Resources: https://weather.fandom.com/wiki/Types_of_Weather
+
+```{r}
+# Clear
+accidents$Weather_Condition[accidents$Weather_Condition == 'Fair' ] = 'Clear'
+
+# Cloudy
+accidents$Weather_Condition[accidents$Weather_Condition == 'Mostly Cloudy' ] = 'Cloudy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Partly Cloudy' ] = 'Cloudy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Scattered Clouds' ] = 'Cloudy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Overcast' ] = 'Cloudy'
+
+# Rainy
+accidents$Weather_Condition[accidents$Weather_Condition == 'Drizzle' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy Drizzle' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Freezing Drizzle' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Drizzle' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy Rain' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy Drizzle' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Freezing Rain' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Rain' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Rain Showers' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Rain Showers' ] = 'Rainy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Rain' ] = 'Rainy'
+
+# Stormy
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy Thunderstorms and Rain'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy T-Storm'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy Thunderstorms and Snow'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Thunderstorms and Rain'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Sand' ] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'T-Storm'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Thunder'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Thunder in the Vicinity'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Thunderstorm'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Thunderstorms and Rain'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Thunderstorms and Snow'] = 'Stormy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Rain with Thunder' ] = 'Stormy'
+
+# Snowy=
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Ice Pellets' ] = 'Snowy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Snow' ] = 'Snowy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Snow Showers' ] = 'Snowy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Snow' ] = 'Snowy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Wintry Mix' ] = 'Snowy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Heavy Snow' ] = 'Snowy'
+
+# Windy
+accidents$Weather_Condition[accidents$Weather_Condition == 'Blowing Dust / Windy' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Cloudy / Windy' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Fair / Windy' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Blowing Dust' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Blowing Snow' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Rain / Windy' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Mostly Cloudy / Windy' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'N/A Precipitation' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Rain / Windy' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Squalls' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Widespread Dust' ] = 'Windy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Partly Cloudy / Windy' ] = 'Windy'
+
+
+# Foggy
+accidents$Weather_Condition[accidents$Weather_Condition == 'Light Freezing Fog' ] = 'Foggy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Haze' ] = 'Foggy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Mist' ] = 'Foggy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Patches of Fog' ] = 'Foggy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Shallow Fog' ] = 'Foggy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Smoke' ] = 'Foggy'
+accidents$Weather_Condition[accidents$Weather_Condition == 'Fog' ] = 'Foggy'
+
+accidents %>% 
+  group_by(Weather_Condition) %>%
+  summarize(count=n())
+```
+
+# Numeric Variables
+
+```{r}
+# Define the summarize_numeric function
+summarize_numeric = function(dataset) {
+  
+  dataset = select_if(dataset, is.numeric)
+  summary.table = data.frame(Attribute = names(dataset))
+  
+  summary.table = summary.table %>% 
+    mutate('Missing Values' = apply(dataset, 2, function (x) sum(is.na(x))),
+           'Unique Values' = apply(dataset, 2, function (x) length(unique(x))),
+           'Mean' = colMeans(dataset, na.rm = TRUE),
+           'Min' = apply(dataset, 2, function (x) min(x, na.rm = TRUE)),
+           'Max' = apply(dataset, 2, function (x) max(x, na.rm = TRUE)),
+           'SD' = apply(dataset, 2, function (x) sd(x, na.rm = TRUE))
+    )
+  summary.table
+}
+
+# Cancel the scientific form
+options(scipen=999)
+
+summarize_numeric(accidents)
+```
+
+### Distance(mi) vs Start_Lat,Start_Lng,End_Lat,End_Lng
+
+We tried to calculate the distance between (End_Lng, End_Lat) and (Start_Lng, Start_Lat) for each row and found that the result is equal to the Distance(mi) column. Also, street, city, county, state, zipcode column has already provided enough information. So we decided to drop these four columns Start_Lat, Start_Lng, End_Lat, End_Lng, and just use Distance(mi) directly.
+
+```{r}
+library(geosphere)
+accidents %>%  select(Start_Lat,Start_Lng,End_Lat,End_Lng,`Distance(mi)`) %>% mutate(dist = distHaversine(cbind(Start_Lng, Start_Lat), cbind(End_Lng, End_Lat))/1609)
+```
+
+### Drop Columns and NAs
+
+```{r}
+# Drop the columns we don't need
+accidents = accidents %>% 
+  select(-Number,-`Wind_Chill(F)`,-Start_Lat,-Start_Lng,-End_Lat,-End_Lng)
+
+# Drop the NAs in these columns
+accidents = accidents %>% drop_na(`Temperature(F)`,`Humidity(%)`,`Pressure(in)`,`Visibility(mi)`)
+
+summarize_numeric(accidents)
+```
+
+### Precipitation(in) Column
+
+Since we think precipitation may be important for our analysis, we decided to keep this column. For the NAs in this column, we replace the NAs based on the value of Weather_Condition column. For weather condition 'Calm', we just use 0 to replace the NAs. For other weather conditions, we use the mean of all precipitation values of this type.
+
+```{r}
+# Replace the NAs in the Precipitation(in) with 0 for the value 'clear'
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Clear'] = 0
+
+# Replace the NAs in the Precipitation(in) with mean for others
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Cloudy'] = mean(accidents$`Precipitation(in)`[accidents$Weather_Condition=='Cloudy'],na.rm=TRUE)
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Foggy'] = mean(accidents$`Precipitation(in)`[accidents$Weather_Condition=='Foggy'],na.rm=TRUE)
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Rainy'] = mean(accidents$`Precipitation(in)`[accidents$Weather_Condition=='Rainy'],na.rm=TRUE)
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Snowy'] = mean(accidents$`Precipitation(in)`[accidents$Weather_Condition=='Snowy'],na.rm=TRUE)
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Stormy'] = mean(accidents$`Precipitation(in)`[accidents$Weather_Condition=='Stormy'],na.rm=TRUE)
+accidents$`Precipitation(in)`[is.na(accidents$`Precipitation(in)`) & accidents$Weather_Condition == 'Windy'] = mean(accidents$`Precipitation(in)`[accidents$Weather_Condition=='Windy'],na.rm=TRUE)
+
+accidents %>% 
+  group_by(Weather_Condition) %>% 
+  summarize(Precipitation = mean(`Precipitation(in)`,na.rm=TRUE))
+```
+
+### Wind_Speed(mph) Column
+
+Since around 1/5 rows are NAs, we cannot simply use 0 to replace the NAs. Thus, we decided to replace the NAs based on the Wind_Direction. For example, if Wind_Direction is calm, it means the wind speed should be 0. If Wind_Direction is N, we just use the mean of the wind speed of the rows with the N Wind_Direction.
+
+```{r}
+# Check the wind speed situation with the column wind direction
+accidents %>% 
+  group_by(Wind_Direction) %>% 
+  summarize(Wind_Speed = mean(`Wind_Speed(mph)`,na.rm=TRUE), num_NA = sum(is.na(`Wind_Speed(mph)`)))
+
+# Replace the NAs for 'CALM' in the Wind_Speed(mph) with 0 
+accidents$`Wind_Speed(mph)`[accidents$Wind_Direction == 'CALM'] = 0
+
+# Replace the NAs for 'North' in the Wind_Speed(mph) with the mean value of rows with 'North' 
+accidents$`Wind_Speed(mph)`[is.na(accidents$`Wind_Speed(mph)`)] = mean(accidents$`Wind_Speed(mph)`[accidents$Wind_Direction=='N'],na.rm=TRUE)
+
+accidents %>% 
+  group_by(Wind_Direction) %>% 
+  summarize(Wind_Speed = mean(`Wind_Speed(mph)`,na.rm=TRUE), num_NA = sum(is.na(`Wind_Speed(mph)`)))
+```
+
+Also, we found the wind speed record in US doesn't exceed 300 miles per hour, so we delete the rows that exceed 300 for wind speed.
+```{r}
+#Since the max wind speed in the US (After researching) is not be able to exceed 300, so delete the rows that exceed the value
+accidents = accidents %>% filter(`Wind_Speed(mph)`<=300)
+```
+
+# Other variables
+
+There are still other variables that neither Numeric nor Character.
+
+```{r}
+summarize_others = function(dataset) {
+  
+  dataset = dataset %>% 
+    select_if(negate(is.numeric)) %>%
+    select_if(negate(is.character))
+  summary.table = data.frame(Attribute = names(dataset))
+  
+  types = c()
+  for(index in 1:ncol(dataset)) types[index] = class(dataset[[index]])[1]
+  
+  summary.table = summary.table %>% 
+    mutate('Type' = types,
+           'Missing Values' = apply(dataset, 2, function (x) sum(is.na(x))),
+           'Unique Values' = apply(dataset, 2, function (x) length(unique(x))))
+  summary.table
+}
+
+# Cancel the scientific form
+options(scipen=999)
+
+summarize_others(accidents)
+```
+
+### Create "Duration" and "Month" columns
+
+Since it is very hard for us to process the column with POSIXct types, we don't need to have the exact time information, and Sunrise_Sunset.. columns already provides the time range for us, we decide to create two new column "Month" and "Duration" to keep some information and drop the "End_Time" and "Start_Time" columns later.
+
+```{r}
+# Calculate the different between 'End_Time' and 'Start_Time'
+# Name the new column 'Duration'
+# Change its type from dfft to numeric
+accidents = accidents %>% 
+  mutate(Duration = End_Time - Start_Time, .after = "End_Time")
+accidents$Duration = as.numeric(accidents$Duration)
+
+# Create a new column Month to keep the record of the month of each accident happened
+accidents = accidents %>% mutate(Month=format(Start_Time,"%B"),.after="End_Time")
+```
+
+### Check all logical variables
+```{r}
+accidents_logical = accidents %>% 
+  select_if(is.logical)
+summary(accidents_logical)
+```
+Since some of them have 99% rows with one value, we decide to keep the columns with the number of any value exceeding 500. For example, in Railway column, it has 906 rows with TRUE value, so we just keep it. But for No_Exit column, the TRUE value only has 150, so we drop the No_Exit column.
+
+### Drop the columns
+
+```{r}
+accidents = accidents %>% 
+  select(-Start_Time,-End_Time,-Weather_Timestamp,-Bump,-Give_Way,-No_Exit,-Roundabout,-Traffic_Calming,-Turning_Loop,-Timezone)
+```
+
+### Convert Convert logical(True,False) to Numeric(0,1)
+
+```{r}
+# Convert logical(True,False) to Numeric(0,1) in 'Crossing','Junction','Station','Stop','Traffic_Signal','Railway','Amenity'
+helper = function(x){
+    ifelse(x=="TRUE", 1,0)
+}
+columns = c('Crossing','Junction','Station','Stop','Traffic_Signal','Railway','Amenity')
+accidents = accidents %>% mutate_at(.var = columns,helper) 
+```
+
+
+# Fianl cleaned & preprocessed dataset
+
+```{r}
+summarize_numeric(accidents)
+summarize_character(accidents)
+
+str(accidents)
+```
+
+
+| Columns dropped | Reason |
+| --------------- | ------ |
+| ID | no relation with our analysis(?) |
+| Number | too many NAs |
+| Wind_Chill(F) | too many NAs |
+| Description | too many unique values |
+| Country | only one unique value |
+| Airport_Code | no relation with our analysis(?) |
+| Start_Lat | use Distance(mi) directly |
+| Start_Lng | use Distance(mi) directly |
+| End_Lat | use Distance(mi) directly |
+| End_Lng | use Distance(mi) directly |
+| Start_Time | use Duration directly |
+| End_Time | use Duration directly |
+| Time_Zone | no relation with our analysis(?) |
+| Weather_Timestamp | no relation with our analysis |
+| Roundabout | most are the same |
+| Turning_Loop | most are the same |
+| Traffic_Calming | most are the same |
+| Bump | most are the same |
+| Give_Way | most are the same |
+| No_Exit | most are the same |

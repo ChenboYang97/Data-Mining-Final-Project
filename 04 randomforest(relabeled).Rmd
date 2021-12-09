@@ -1,0 +1,264 @@
+---
+title: "model and clustering"
+author: "fannie"
+date: "2021/12/2"
+output:
+  pdf_document: 
+     latex_engine: xelatex
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyverse)
+accidents <-read_csv("Cleaned_and_Preprocessed_Data.csv",show_col_types = FALSE)
+```
+
+
+
+```{r}
+accidents = accidents %>% mutate(Sunrise_Sunset = as.factor(
+  case_when(
+    Sunrise_Sunset == 'Night' ~ 1,
+    Sunrise_Sunset == 'Day' ~ 0,)))
+```
+
+```{r}
+accidents = accidents %>% mutate(Month = as.factor(
+  case_when(
+    Month == 'February' ~ 2,
+    Month == 'March' ~ 3,
+    Month == 'April'~4,
+    Month == 'May'~5,
+    Month == 'June'~6,
+    Month == 'July'~7,
+    Month == 'August'~8,
+    Month == 'September'~9,
+    Month == 'October'~10,
+    Month == 'November'~11,
+    )))
+```
+
+```{r}
+accidents = accidents %>% mutate(Weather_Condition = as.factor(
+  case_when(
+    Weather_Condition == 'Clear' ~ 0,
+    Weather_Condition == 'Cloudy' ~ 1,
+    Weather_Condition == 'Windy'~2,
+    Weather_Condition == 'Rainy'~3,
+    Weather_Condition == 'Stormy'~4,
+    Weather_Condition == 'Rainy'~5,
+    Weather_Condition == 'Foggy'~6,
+    )))
+```
+
+```{r}
+accidents_use <-accidents[,c("Severity","Month","Temperature(F)","Humidity(%)","Pressure(in)","Visibility(mi)","Wind_Speed(mph)","Precipitation(in)","Amenity","Crossing","Junction","Railway","Station","Stop","Traffic_Signal","Weather_Condition","Sunrise_Sunset")]
+accidents_use = accidents_use %>% 
+      mutate(Severity = as.factor(Severity))
+names(accidents_use) <- c("Severity","Month","Temperature","Humidity","Pressure","Visibility","Wind_Speed","Precipitation","Amenity","Crossing","Junction","Railway","Station","Stop","Traffic_Signal","Weather_Condition","Sunrise_Sunset")
+accidents_use<-na.omit(accidents_use)
+```
+
+```{}
+library("fastDummies")
+accidents_dummy <- dummy_cols(accidents_use, select_columns = c("Weather_Condition","Sunrise_Sunset","Month"))
+accidents_dummy <- accidents_dummy[,-which(names(accidents_dummy)%in%c("Weather_Condition","Sunrise_Sunset","Month"))]
+accidents_use<-na.omit(accidents_dummy)
+```
+
+```{r}
+accidents_use[1:10,]
+```
+
+
+```{r}
+set.seed(2)
+ind <- sample(2, nrow(accidents_use), replace = TRUE, prob = c(0.8, 0.2))
+train <- accidents_use[ind==1,]
+test <- accidents_use[ind==2,]
+```
+
+
+```{r}
+library(caret)
+library(randomForest)
+rf <- randomForest(Severity~., data=train, proximity=FALSE,ntree=500)
+```
+
+
+```{r}
+
+p2 <- predict(rf, test)
+rf_cm <-confusionMatrix(p2, test$Severity)
+rf_cm
+```
+```{r}
+library(MLmetrics)
+F1_Score(test$Severity, p2, positive = NULL)
+F1_Score
+byclass <- rf_cm$byClass
+byclass1 <- as.data.frame(byclass)
+byclass1 <- byclass1[,c("F1","Balanced Accuracy","Precision","Recall")]
+byclass1
+```
+```{r}
+trainR2 = cor(as.numeric(rf$predicted),as.numeric(train$Severity))^2
+testR2 = cor(as.numeric(p2),as.numeric(test$Severity))^2
+overfitting = trainR2 - testR2
+overfitting
+```
+
+
+
+```{r}
+hist(treesize(rf),
+     main = "No. of Nodes for the Trees",
+     col = "gray")
+#Variable Importance
+varImpPlot(rf,
+           sort = T,
+           n.var = 10,
+           main = "Top 10 - Variable Importance",
+           bg = "gray", cex=1, pch=22)
+importance(rf)
+#MeanDecreaseGini
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

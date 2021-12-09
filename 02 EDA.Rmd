@@ -1,0 +1,795 @@
+---
+title: "EDA"
+author: "Group 8"
+date: "11/26/2021"
+output: html_document
+---
+
+```{r}
+#Load libraries
+library(tidyverse)
+library(ggcorrplot)
+```
+
+### Load data
+
+```{r}
+accidents = read_csv('Cleaned_and_Preprocessed_Data.csv')
+summary(accidents)
+```
+
+# Transformations Required
+
+## Convert some numeric columns to Factors
+```{r}
+accidents = accidents %>% 
+  mutate(Severity = as_factor(Severity),
+         Amenity = as_factor(Amenity),
+         Crossing = as_factor(Crossing),
+         Junction = as_factor(Junction),
+         Railway = as_factor(Railway),
+         Station = as_factor(Station),
+         Stop = as_factor(Stop),
+         Traffic_Signal= as_factor(Traffic_Signal))
+
+```
+
+## Convert some character columns to Factors
+```{r}
+accidents = accidents %>% 
+  mutate(Side = as_factor(Side),
+         Sunrise_Sunset  = as_factor(Sunrise_Sunset),
+         Civil_Twilight = as_factor(Civil_Twilight),
+         Nautical_Twilight = as_factor(Nautical_Twilight),
+         Astronomical_Twilight = as_factor(Astronomical_Twilight),
+         Weather_Condition = as_factor(Weather_Condition),
+         Wind_Direction = as_factor(Wind_Direction),
+         Month = as_factor(Month),
+         Zipcode = as_factor(Zipcode),
+         State = as_factor(State),
+         City = as_factor(City),
+         County = as_factor(County),
+         Street = as_factor(Street),)
+
+accidents$Month = factor(accidents$Month,level = c('February','March','April','May','June','July','August','September','October','November','December'))
+```
+
+```{r}
+str(accidents)
+```
+## Logical Groupings of Attributes
+### Accidents Information:
+  Numeric: Duration,Distance(mi)
+  Factor: Severity, Month
+### Weather information:
+  Numeric: Temperature(F),Humidity(%),Pressure(in),Pressure(in),Visibility(mi),Wind_Speed(mph),Precipitation(in)
+  Factor: Weather_Condition,Wind_Direction,Sunrise_Sunset,Civil_Twilight,Nautical_Twilight,Astronomical_Twilight
+### Address Information:
+  Factor: Street, Side, City, County, State, Zipcode   
+### Road Information:
+  Factor: Amenity, Crossing, Junction, Railway, Station, Stop, Traffic_Signal
+
+# Univariate Analysis
+```{r}
+library(ggplot2)
+library(gridExtra)
+```
+
+##  Numeric Attributes
+
+Address Information: Duration,Distance(mi)
+Weather Information: Temperature(F),Humidity(%),Pressure(in),Visibility(mi),Wind_Speed(mph),Precipitation(in)
+
+```{r, fig.height=6, fig.width=12}
+p1 = ggplot(accidents) + geom_histogram(aes(x=`Duration`))
+p2 = ggplot(accidents) + geom_histogram(aes(x=`Distance(mi)`))
+p3 = ggplot(accidents) + geom_histogram(aes(x=`Temperature(F)`))
+p4 = ggplot(accidents) + geom_histogram(aes(x=`Humidity(%)`))
+p5 = ggplot(accidents) + geom_histogram(aes(x=`Pressure(in)`))
+p6 = ggplot(accidents) + geom_histogram(aes(x=`Visibility(mi)`))
+p7 = ggplot(accidents) + geom_histogram(aes(x=`Wind_Speed(mph)`))
+p8 = ggplot(accidents) + geom_histogram(aes(x=`Precipitation(in)`))
+
+grid.arrange(p1, p2,nrow=1,top="Address Information")
+grid.arrange(p3, p4, p5, p6, p7, p8,nrow=3,top="Weather Information")
+```
+
+Address Information: Most of Duration and Distance are very short. 
+Weather Information: Looks Normal.
+
+## Factor Attributes
+
+Accident Information: Severity,Month
+Weather Information: Wind_Direction,Weather_Condition,Sunrise_Sunset,Civil_Twilight,Nautical_Twilight,Astronomical_Twilight
+Address Information: Street, Side, City, County, State, Zipcode
+Road Information: Amenity, Crossing, Junction, Railway, Station, Stop, Traffic_Signal
+
+```{r, fig.height=12, fig.width=12}
+p9 = ggplot(accidents) + geom_bar(aes(x=`Month`))
+p24 = ggplot(accidents) + geom_bar(aes(x=`Severity`))
+
+p11 = ggplot(accidents) + geom_bar(aes(x=`Wind_Direction`))
+p12 = ggplot(accidents) + geom_bar(aes(x=`Weather_Condition`))
+p20 = ggplot(accidents) + geom_bar(aes(x=`Sunrise_Sunset`))
+p21 = ggplot(accidents) + geom_bar(aes(x=`Civil_Twilight`))
+p22 = ggplot(accidents) + geom_bar(aes(x=`Nautical_Twilight`))
+p23 = ggplot(accidents) + geom_bar(aes(x=`Astronomical_Twilight`))
+
+p10 = ggplot(accidents) + geom_bar(aes(x=Side))
+p29 = ggplot(accidents) + geom_bar(aes(x=Street))
+p25 = ggplot(accidents) + geom_bar(aes(x=County))
+p26 = ggplot(accidents) + geom_bar(aes(x=City))
+p27 = ggplot(accidents) + geom_bar(aes(x=State))
+p28 = ggplot(accidents) + geom_bar(aes(x=Zipcode))
+
+
+p13 = ggplot(accidents) + geom_bar(aes(x=`Amenity`))
+p14 = ggplot(accidents) + geom_bar(aes(x=`Crossing`))
+p15 = ggplot(accidents) + geom_bar(aes(x=`Junction`))
+p16 = ggplot(accidents) + geom_bar(aes(x=`Railway`))
+p17 = ggplot(accidents) + geom_bar(aes(x=`Station`))
+p18 = ggplot(accidents) + geom_bar(aes(x=`Stop`))
+p19 = ggplot(accidents) + geom_bar(aes(x=`Traffic_Signal`))
+
+
+grid.arrange(p9, p24, nrow=2,top='Accident Information')
+grid.arrange(p11, p12, p20, p21, p22, p23, nrow=3,top='Weather Information')
+grid.arrange(p10, p25, p26, p27, p28, p29, nrow=3,top='Address Information')
+grid.arrange(p13, p14, p15, p16, p17, p18, p19, nrow=4,top='Road Information')
+```
+
+```{r, fig.height=6.8, fig.width=7.2}
+accidents %>%
+   group_by(State) %>% 
+   summarise(Count = n()) %>%
+   filter(Count == max(Count))
+accidents %>%
+   group_by(County) %>% 
+   summarise(Count = n()) %>%
+   filter(Count == max(Count))
+```
+
+Accident Information: Winter and Fall has more accidents than Spring and Summer (Insight). Serverity 2 takes the most part.
+Weather Information: Calm takes the most part. Cloudy and Clear takes the most part. Day has more accidents than Night.
+Address Information: CA in states and Los Angeles in counties has the most occurred accidents (Insights).
+Road Information: Looks Normal
+
+
+```{r, fig.height=6.8, fig.width=7.2}
+library(dplyr)
+a1 <- accidents %>% group_by(City) %>% count() %>% arrange(-n)
+a1 <- head(a1, 10)
+a1$City <- factor(a1$City, levels = a1$City)
+b1<- ggplot(a1) + geom_col(aes(x=City, y = n))
+
+a1 <- accidents %>% group_by(County) %>% count() %>% arrange(-n)
+a1 <- head(a1, 10)
+a1$County <- factor(a1$County, levels = a1$County)
+b2 <- ggplot(a1) + geom_col(aes(x=County, y = n))
+
+a1 <- accidents %>% group_by(Street) %>% count() %>% arrange(-n)
+a1 <- head(a1, 10)
+a1$Street <- factor(a1$Street, levels = a1$Street)
+b3 <- ggplot(a1) + geom_col(aes(x=Street, y = n))
+
+a1 <- accidents %>% group_by(State   ) %>% count() %>% arrange(-n)
+a1 <- head(a1, 10)
+a1$State    <- factor(a1$State   , levels = a1$State   )
+b4 <- ggplot(a1) + geom_col(aes(x=State   , y = n))
+
+grid.arrange(b1, b2,b3,b4, nrow=2)
+```
+
+
+# Bivariate Analysis
+
+## Measure/Measure
+
+```{r, fig.height=12, fig.width=9.8}
+library(GGally)
+nums <- sapply(accidents, is.numeric)
+d <- accidents[,nums]
+#too many points for scatters
+set.seed(1)
+#draw a sparse plot but keep the original pattern
+id <- sample(1:nrow(d), 2000)
+d2 <- d[id,]
+ggpairs(d2)
+
+ggcorrplot(cor(d, use = "pairwise.complete.obs"))
+
+```
+
+
+
+## Category/Category
+```{r,fig.height=9.8, fig.width=9.8}
+cc1 = ggplot(accidents) + geom_count(aes(x= Severity, y = Month ))
+cc2 = ggplot(accidents) + geom_bar(aes(x=  Severity, fill =Side )) 
+
+
+cc3 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Wind_Direction ))
+cc4 = ggplot(accidents) +  geom_bar(aes(x= Severity, fill =Weather_Condition  ))
+cc5 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Amenity  )) 
+cc6 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Crossing  )) 
+cc7 = ggplot(accidents) + geom_bar(aes(x= Severity, fill =  Junction  )) 
+cc8 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Railway  )) 
+cc9 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Station   )) 
+cc10 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Stop    )) 
+cc11 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Traffic_Signal  )) 
+cc12 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Sunrise_Sunset )) 
+cc13 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Sunrise_Sunset )) 
+cc14 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Nautical_Twilight )) 
+cc15 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Civil_Twilight  )) 
+cc16 = ggplot(accidents) + geom_bar(aes(x= Severity, fill = Astronomical_Twilight  ))
+
+grid.arrange(cc2, cc3,cc4, cc5, cc6, cc7, cc8,  nrow = 3)
+
+grid.arrange(cc9,cc10, cc11, cc12, cc13, cc14, cc15, nrow = 4)
+```
+
+### Severity vs Other Categories
+```{r}
+g2 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Severity), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Severity), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Severity), position = "fill") + labs(y = "Percent")
+g6 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Severity), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Severity), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Severity), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Severity), position = "fill") + labs(y = "Percent")
+
+g10 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Severity), position = "fill") + labs(y = "Percent")
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Severity), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Severity), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Severity), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Severity), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Severity), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Severity), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g2, nrow=1,top = "Severity vs Accident Categories")
+grid.arrange(g3,g5,g6,g7,g8,g9, nrow=4,top = "Severity vs Weather Categories")
+grid.arrange(g10,g11,g12,g13,g14,g15,g16, nrow=4,top = "Severity vs Road Categories")
+```
+
+### Amenity vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Amenity), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Amenity), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Amenity), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Amenity), position = "fill") + labs(y = "Percent")
+g6 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Amenity), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Amenity), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Amenity), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Amenity), position = "fill") + labs(y = "Percent")
+
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Amenity), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Amenity), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Amenity), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Amenity), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Amenity), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Amenity), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Amenity vs Accident Categories")
+grid.arrange(g3,g5,g6,g7,g8,g9, nrow=4,top = "Amenity vs Weather Categories")
+grid.arrange(g11,g12,g13,g14,g15,g16, nrow=4,top = "Amenity vs Road Categories")
+```
+
+It seems Road Information vs other categories are meaningless since usually most of these road categories are false for its value. However, we will do Junction and Trafic_Signal vs other categories because these two has more balance value than other categories.
+
+### Junction vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Junction), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Junction), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Junction), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Junction), position = "fill") + labs(y = "Percent")
+g6 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Junction), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Junction), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Junction), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Junction), position = "fill") + labs(y = "Percent")
+
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Junction), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Junction), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Junction), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Junction), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Junction), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Junction), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Junction vs Accident Categories")
+grid.arrange(g3,g5,g6,g7,g8,g9, nrow=4,top = "Junction vs Weather Categories")
+grid.arrange(g11,g12,g13,g14,g15,g16, nrow=4,top = "Junction vs Road Categories")
+```
+
+### Traffic_Signal vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g6 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Traffic_Signal), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Traffic_Signal vs Accident Categories")
+grid.arrange(g3,g5,g6,g7,g8,g9, nrow=4,top = "Traffic_Signal vs Weather Categories")
+grid.arrange(g11,g12,g13,g14,g15,g16, nrow=4,top = "Traffic_Signal vs Road Categories")
+```
+
+
+### Sunrise_Sunset vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+
+g10 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Sunrise_Sunset), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Sunrise_Sunset vs Accident Categories")
+grid.arrange(g3,g5,g7,g8,g9, nrow=4,top = "Sunrise_Sunset vs Weather Categories")
+grid.arrange(g10,g11,g12,g13,g14,g15,g16, nrow=4,top = "Sunrise_Sunset vs Road Categories")
+```
+
+### Civil_Twilight vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+
+g10 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Civil_Twilight), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Civil_Twilight vs Accident Categories")
+grid.arrange(g3,g5,g7,g8,g9, nrow=4,top = "Civil_Twilight vs Weather Categories")
+grid.arrange(g10,g11,g12,g13,g14,g15,g16, nrow=4,top = "Civil_Twilight vs Road Categories")
+```
+
+### Nautical_Twilight vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Astronomical_Twilight, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+
+g10 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Nautical_Twilight), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Nautical_Twilight vs Accident Categories")
+grid.arrange(g3,g5,g7,g8,g9, nrow=4,top = "Nautical_Twilight vs Weather Categories")
+grid.arrange(g10,g11,g12,g13,g14,g15,g16, nrow=4,top = "Nautical_Twilight vs Road Categories")
+```
+
+
+### Astronomical_Twilight vs Other Categories
+```{r}
+g1 = ggplot(accidents) + geom_bar(aes(x=Month, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g2 = ggplot(accidents) + geom_bar(aes(x=Severity, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+
+g3 = ggplot(accidents) + geom_bar(aes(x=Weather_Condition, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g5 = ggplot(accidents) + geom_bar(aes(x=Wind_Direction, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g7 = ggplot(accidents) + geom_bar(aes(x=Sunrise_Sunset, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g8 = ggplot(accidents) + geom_bar(aes(x=Civil_Twilight, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g9 = ggplot(accidents) + geom_bar(aes(x=Nautical_Twilight, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+
+g10 = ggplot(accidents) + geom_bar(aes(x=Amenity, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g11 = ggplot(accidents) + geom_bar(aes(x=Crossing, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g12 = ggplot(accidents) + geom_bar(aes(x=Junction, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g13 = ggplot(accidents) + geom_bar(aes(x=Railway, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g14 = ggplot(accidents) + geom_bar(aes(x=Station, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g15 = ggplot(accidents) + geom_bar(aes(x=Stop, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+g16 = ggplot(accidents) + geom_bar(aes(x=Traffic_Signal, fill = Astronomical_Twilight), position = "fill") + labs(y = "Percent")
+
+grid.arrange(g1,g2, nrow=2,top = "Astronomical_Twilight vs Accident Categories")
+grid.arrange(g3,g5,g7,g8,g9, nrow=4,top = "Astronomical_Twilight vs Weather Categories")
+grid.arrange(g10,g11,g12,g13,g14,g15,g16, nrow=4,top = "Astronomical_Twilight vs Road Categories")
+```
+After looking at the Sunrise_Sunset,Civil_Twilight,Nautical_Twilight,Astronomical_Twilight vs other categories, it seems that the more severe accidents, the more probability they may occur in the Night.
+Also, it is easy to see that Sunrise_Sunset has the looser definition for Night than the other three Civil_Twilight,Nautical_Twilight,Astronomical_Twilight (i.e. larger range for Night), which proved what we know from the resources online.
+The last insight is that we could see that July usually has more accidents occurring at Day and accidents occurring in December are more probably at Night. That would comply with our knowledge, that is on Winter Night usually has more hour than Day. Summer usually has more hours at Day.
+
+## Category/Measure
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=Duration  ))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Distance(mi)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Temperature(F)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x=Severity , y=`Humidity(%)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Pressure(in)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x=Severity , y=`Visibility(mi)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Wind_Speed(mph)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x=Severity , y=`Precipitation(in)`))
+
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,nrow = 4)
+```
+### Categories vs Distance(mi)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Distance(mi)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Distance(mi)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Distance(mi)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Distance(mi)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Distance(mi)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Distance(mi)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Distance(mi)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Distance(mi)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Distance(mi)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Distance(mi)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Distance(mi)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Distance(mi)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Distance(mi)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Distance(mi)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Distance(mi)`))
+
+grid.arrange(p1,p2,nrow = 2,top='Distance(mi) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Distance(mi) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Distance(mi) vs Road categories')
+```
+
+### Category vs Duration
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=Duration))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=Duration))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=Duration))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=Duration))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=Duration))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=Duration))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=Duration))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=Duration))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=Duration))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=Duration))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=Duration))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=Duration))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=Duration))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=Duration))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=Duration))
+
+grid.arrange(p1,p2,nrow = 2,top='Duration vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Duration vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Duration vs Road categories')
+```
+
+### Category vs Temperature(F)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Temperature(F)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Temperature(F)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Temperature(F)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Temperature(F)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Temperature(F)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Temperature(F)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Temperature(F)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Temperature(F)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Temperature(F)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Temperature(F)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Temperature(F)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Temperature(F)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Temperature(F)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Temperature(F)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Temperature(F)`))
+
+grid.arrange(p1,p2,nrow = 2,top='Temperature(F) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Temperature(F) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Temperature(F) vs Road categories')
+```
+
+### Category vs Humidity(%)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Humidity(%)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Humidity(%)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Humidity(%)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Humidity(%)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Humidity(%)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Humidity(%)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Humidity(%)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Humidity(%)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Humidity(%)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Humidity(%)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Humidity(%)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Humidity(%)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Humidity(%)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Humidity(%)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Humidity(%)`))
+
+grid.arrange(p1,p2,nrow = 2,top='THumidity(%) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Humidity(%) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Humidity(%) vs Road categories')
+```
+
+
+### Category vs Pressure(in)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Pressure(in)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Pressure(in)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Pressure(in)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Pressure(in)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Pressure(in)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Pressure(in)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Pressure(in)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Pressure(in)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Pressure(in)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Pressure(in)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Pressure(in)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Pressure(in)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Pressure(in)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Pressure(in)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Pressure(in)`))
+
+grid.arrange(p1,p2,nrow = 2,top='Pressure(in) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Pressure(in) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Pressure(in) vs Road categories')
+```
+
+### Category vs Visibility(mi)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Visibility(mi)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Visibility(mi)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Visibility(mi)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Visibility(mi)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Visibility(mi)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Visibility(mi)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Visibility(mi)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Visibility(mi)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Visibility(mi)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Visibility(mi)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Visibility(mi)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Visibility(mi)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Visibility(mi)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Visibility(mi)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Visibility(mi)`))
+
+grid.arrange(p1,p2,nrow = 2,top='Visibility(mi) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Visibility(mi) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Visibility(mi) vs Road categories')
+```
+
+
+### Category vs Wind_Speed(mph)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Wind_Speed(mph)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Wind_Speed(mph)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Wind_Speed(mph)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Wind_Speed(mph)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Wind_Speed(mph)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Wind_Speed(mph)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Wind_Speed(mph)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Wind_Speed(mph)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Wind_Speed(mph)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Wind_Speed(mph)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Wind_Speed(mph)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Wind_Speed(mph)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Wind_Speed(mph)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Wind_Speed(mph)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Wind_Speed(mph)`))
+
+grid.arrange(p1,p2,nrow = 2,top='Wind_Speed(mph) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Wind_Speed(mph) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Wind_Speed(mph) vs Road categories')
+```
+
+### Category vs Precipitation(in)
+
+```{r, fig.height=9.8, fig.width=6.8}
+p1 <- ggplot(accidents) + geom_boxplot(aes(x= Severity , y=`Precipitation(in)`))
+
+p2 <-ggplot(accidents) + geom_boxplot(aes(x= Month , y=`Precipitation(in)`))
+
+p3 <-ggplot(accidents) + geom_boxplot(aes(x= Weather_Condition , y=`Precipitation(in)`))
+
+
+p4 <-ggplot(accidents) + geom_boxplot(aes(x= Wind_Direction , y=`Precipitation(in)`))
+
+p5 <-ggplot(accidents) + geom_boxplot(aes(x= Sunrise_Sunset , y=`Precipitation(in)`))
+
+p6 <-ggplot(accidents) + geom_boxplot(aes(x= Civil_Twilight , y=`Precipitation(in)`))
+
+p7 <-ggplot(accidents) + geom_boxplot(aes(x= Nautical_Twilight , y=`Precipitation(in)`))
+
+p8 <- ggplot(accidents) + geom_boxplot(aes(x= Astronomical_Twilight , y=`Precipitation(in)`))
+
+p9 <- ggplot(accidents) + geom_boxplot(aes(x= Amenity , y=`Precipitation(in)`))
+
+p10 <- ggplot(accidents) + geom_boxplot(aes(x= Crossing , y=`Precipitation(in)`))
+
+p11 <- ggplot(accidents) + geom_boxplot(aes(x= Junction , y=`Precipitation(in)`))
+
+p12 <- ggplot(accidents) + geom_boxplot(aes(x= Railway , y=`Precipitation(in)`))
+
+p13 <- ggplot(accidents) + geom_boxplot(aes(x= Station , y=`Precipitation(in)`))
+
+p14 <- ggplot(accidents) + geom_boxplot(aes(x= Stop , y=`Precipitation(in)`))
+
+p15 <- ggplot(accidents) + geom_boxplot(aes(x= Traffic_Signal , y=`Precipitation(in)`))
+
+grid.arrange(p1,p2,nrow = 2,top='Precipitation(in) vs Accidents categories')
+grid.arrange(p3,p4,p5,p6,p7,p8,nrow = 3,top='Precipitation(in) vs Weather categories')
+grid.arrange(p9,p10,p11,p12,p13,p14,p15,nrow = 4,top='Precipitation(in) vs Road categories')
+```
+
+## Check the correlation for Sunrise_Sunset,Civil_Twilight,Nautical_Twilight,Astronomical_Twilight
+
+```{r}
+library(lsr)
+
+df = accidents %>%
+  select(Sunrise_Sunset,Civil_Twilight,Nautical_Twilight,Astronomical_Twilight)
+
+# function to get chi square p value and Cramers V
+f = function(x,y) {
+    tbl = df %>% select(x,y) %>% table()
+    chisq_pval = round(chisq.test(tbl)$p.value, 4)
+    cramV = round(cramersV(tbl), 4) 
+    data.frame(x, y, chisq_pval, cramV) }
+
+# create unique combinations of column names
+df_comb = data.frame(t(combn(sort(names(df)), 2)), stringsAsFactors = F)
+
+# apply function to each variable combination
+df_res = map2_df(df_comb$X1, df_comb$X2, f)
+
+# plot results
+df_res %>%
+  ggplot(aes(x,y,fill=chisq_pval))+
+  geom_tile()+
+  geom_text(aes(x,y,label=cramV))+
+  scale_fill_gradient(low="red", high="yellow")+
+  theme_classic()
+```
+

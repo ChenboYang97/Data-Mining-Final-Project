@@ -1,0 +1,684 @@
+---
+title: "gbm+NB+xgb+knn+cluster"
+author: "fannie"
+date: "2021/12/2"
+output:
+  pdf_document: 
+     latex_engine: xelatex
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyverse)
+accidents <-read_csv("Cleaned_and_Preprocessed_Data.csv",show_col_types = FALSE)
+```
+
+```{r}
+accidents = accidents %>% mutate(Sunrise_Sunset = as.factor(
+  case_when(
+    Sunrise_Sunset == 'Night' ~ 1,
+    Sunrise_Sunset == 'Day' ~ 0,)))
+```
+
+```{r}
+accidents = accidents %>% mutate(Month = as.factor(
+  case_when(
+    Month == 'February' ~ 2,
+    Month == 'March' ~ 3,
+    Month == 'April'~4,
+    Month == 'May'~5,
+    Month == 'June'~6,
+    Month == 'July'~7,
+    Month == 'August'~8,
+    Month == 'September'~9,
+    Month == 'October'~10,
+    Month == 'November'~11,
+    )))
+```
+
+```{r}
+accidents = accidents %>% mutate(Weather_Condition = as.factor(
+  case_when(
+    Weather_Condition == 'Clear' ~ 0,
+    Weather_Condition == 'Cloudy' ~ 1,
+    Weather_Condition == 'Windy'~2,
+    Weather_Condition == 'Rainy'~3,
+    Weather_Condition == 'Stormy'~4,
+    Weather_Condition == 'Rainy'~5,
+    Weather_Condition == 'Foggy'~6,
+    )))
+```
+
+
+```{r}
+accidents_use <-accidents[,c("Severity","Month","Temperature(F)","Humidity(%)","Pressure(in)","Visibility(mi)","Wind_Speed(mph)","Precipitation(in)","Amenity","Crossing","Junction","Railway","Station","Stop","Traffic_Signal","Weather_Condition","Sunrise_Sunset")]
+accidents_use = accidents_use %>% 
+      mutate(Severity = as.factor(Severity))
+```
+
+```{}
+names(accidents_use) <- c("Severity","Month","Temperature","Humidity","Pressure","Visibility","Wind_Speed","Precipitation","Amenity","Crossing","Junction","Railway","Station","Stop","Traffic_Signal","Weather_Condition","Sunrise_Sunset")
+accidents_use<-na.omit(accidents_use)
+```
+
+```{}
+library("fastDummies")
+accidents_dummy <- dummy_cols(accidents_use, select_columns = c("Weather_Condition","Sunrise_Sunset","Month"))
+accidents_dummy <- accidents_dummy[,-which(names(accidents_dummy)%in%c("Weather_Condition","Sunrise_Sunset","Month"))]
+accidents_use<-na.omit(accidents_dummy)
+```
+
+
+
+```{r}
+accidents_use<-na.omit(accidents_use)
+accidents_use[1:10,]
+```
+
+
+
+
+## split into train test sets(stratified by severity)
+
+```{r}
+library(caret)
+# test set
+train.index <- createDataPartition(accidents_use$Severity,p = .8, list = FALSE) # 20% for test
+
+trainset <- accidents_use[train.index,]
+testset <- accidents_use[-train.index,]
+
+# set y
+train_y = trainset$Severity
+test_y = testset$Severity
+
+# set x
+train_x = trainset[,-1]
+test_x = testset[,-1]
+```
+
+
+
+
+
+## Generalized Boosted Regression 
+
+```{r}
+
+library(gbm)
+
+```
+```{r}
+set.seed(123)
+fitControl = trainControl(method="none", number=5, returnResamp = "all")
+
+model2 = train(Severity~., data=trainset, method="gbm",distribution="multinomial", trControl=fitControl, verbose=F, tuneGrid=data.frame(.n.trees=100, .shrinkage=0.01, .interaction.depth=1, .n.minobsinnode=1))
+
+```
+
+```{r}
+RocImp1 <- varImp(model2, scale = FALSE)
+ggplot2::ggplot(RocImp1,top=10)
+```
+
+
+```{r}
+mPred = predict(model2, testset, na.action = na.pass)
+cm=confusionMatrix(mPred, testset$Severity)
+cm
+```
+```{r}
+library(MLmetrics)
+F1_Score(test_y, mPred, positive = NULL)
+
+gbmbyclass <- cm$byClass
+gbmbyclass1 <- as.data.frame(gbmbyclass)
+gbmbyclass1 <- gbmbyclass1[,c("F1","Balanced Accuracy","Precision","Recall")]
+gbmbyclass1
+```
+
+## naive bayes
+
+
+
+```{r}
+library(caret)
+library(naivebayes)
+library(e1071)
+trainset<-as.data.frame(trainset)
+Grid = data.frame(usekernel=TRUE,laplace = 0,adjust=1)
+
+NB = train(Severity ~ .,data=trainset,method="naive_bayes",trControl=trainControl(method="none"),tuneGrid=Grid)
+#NB = train(Severity ~ .,data=trainset,method="naive_bayes",usepoisson = TRUE)
+
+```
+
+```{r}
+mPred2= predict(NB, testset, na.action = na.pass)
+cm2 <-confusionMatrix(mPred2, testset$Severity)
+cm2
+```
+```{r}
+F1_Score(test_y, mPred2, positive = NULL)
+
+NBbyclass <- cm2$byClass
+NBbyclass1 <- as.data.frame(NBbyclass)
+NBbyclass1 <- NBbyclass1[,c("F1","Balanced Accuracy","Precision","Recall")]
+NBbyclass1
+```
+
+```{r}
+varImp(NB)
+```
+```{r}
+RocImp2 <- varImp(NB, scale = FALSE)
+ggplot2::ggplot(RocImp2,top=10)
+#plot(RocImp2,top=10)
+```
+
+### knn
+```{r}
+library(class)
+trainset <- as.data.frame(trainset)
+testset<-as.data.frame(testset)
+pr <- knn(trainset,testset,cl=trainset$Severity,k=10)
+```
+
+
+```{r}
+tab <- table(pr,testset$Severity)
+tab
+```
+
+
+
+```{r}
+cm3 <- confusionMatrix(table(pr,testset$Severity))
+cm3
+```
+
+```{r}
+F1_Score(test_y, pr, positive = NULL)
+KNNbyclass <- cm3$byClass
+KNNbyclass1 <- as.data.frame(KNNbyclass)
+KNNbyclass1 <- KNNbyclass1[,c("F1","Balanced Accuracy","Precision","Recall")]
+KNNbyclass1
+```
+
+##XGB
+
+
+```{r}
+library(xgboost)
+```
+
+
+```{r}
+library(caret)
+train_x1 <-data.matrix(train_x)
+test_x1 <-data.matrix(test_x)
+
+xgb_train = xgb.DMatrix(data=train_x1, label=train_y)
+xgb_test = xgb.DMatrix(data=test_x1, label=test_y)
+```
+
+
+```{r}
+xgbc = xgboost(data=xgb_train, max.depth=4, nrounds=100)
+xgb.importance(model = xgbc)
+importance_matrix <- xgb.importance(model = xgbc)
+
+xgb.plot.importance(importance_matrix, rel_to_first = TRUE, top_n=10,xlab = "Relative importance")
+```
+
+```{r}
+pred = predict(xgbc, xgb_test)
+pred[(pred>3)] = 3
+pred_y = as.factor((levels(test_y))[round(pred)])
+#print(pred_y)
+```
+
+```{r}
+cm4 = confusionMatrix(test_y, pred_y)
+cm4
+
+```
+```{r}
+F1_Score(test_y, pred_y, positive = NULL)
+#cm4$byClass
+XGBbyclass <- cm4$byClass
+XGBbyclass1 <- as.data.frame(XGBbyclass)
+XGBbyclass1 <- XGBbyclass1[,c("F1","Balanced Accuracy","Precision","Recall")]
+XGBbyclass1
+```
+## clustering
+
+
+```{r}
+library(tidyverse)
+accidents <-read_csv("Cleaned_and_Preprocessed_Data.csv",show_col_types = FALSE)
+#accidents <- accidents[accidents$State=="CA",]
+accidents <-na.omit(accidents)
+accidents_numeric<-select_if(accidents,is.numeric)
+accidents_clustering<- accidents[,c("Severity","Duration","Distance(mi)","Temperature(F)","Humidity(%)","Pressure(in)","Visibility(mi)","Wind_Speed(mph)","Precipitation(in)")]
+
+accidents_clustering[1:10,]
+```
+
+
+
+```{r}
+# normalize the data
+min_max_norm <- function(x) {
+    (x - min(x)) / (max(x) - min(x))}
+accidents_clustering_norm <- as.data.frame(lapply(accidents_clustering[,-9], min_max_norm))
+#accidients_clustering_norm[1:10,]
+accidents_clustering_norm$Precipitation <- accidents_clustering$`Precipitation(in)`
+accidents_clustering_norm <- accidents_clustering_norm[,-c(1,2)]
+accidents_clustering_norm[1:10,]
+```
+
+
+
+
+# Clustering: k-mean
+
+## 
+```{r}
+library(factoextra)
+# find No of clusters
+
+
+```
+
+```{r}
+totwss = tibble(num_clusters = 1:10, tot_withinss = 0)
+for (i in 1:10) {
+  km = kmeans(accidents_clustering_norm, i, nstart=10)
+  totwss$tot_withinss[i] = km$tot.withinss
+}
+ggplot(totwss, aes(x = num_clusters, y=tot_withinss)) + geom_line() + geom_point()
+```
+
+
+
+
+```{r}
+# the plot suggest 3 clusters to be used
+accidents_km1 = kmeans(accidents_clustering_norm, 3, nstart=20)
+fviz_cluster(accidents_km1,accidents_clustering_norm)
+```
+
+```{r}
+accidents_assign = accidents_clustering_norm %>% mutate(Cluster = accidents_km1$cluster)
+accidents_assign %>% group_by(Cluster) %>% summarize_all(mean)
+
+```
+
+```{r}
+accidents_km1$size
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

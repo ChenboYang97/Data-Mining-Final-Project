@@ -1,0 +1,286 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(dplyr)
+
+```
+```{r}
+library(lattice)
+library(ggplot2)
+library(caret)
+library(e1071)
+library(nnet)
+library(pROC)
+```
+
+```{r}
+df = read.csv("Cleaned_and_Preprocessed_Data.csv")
+df[1:5,]
+summary(df)
+
+df$Weather_Condition = as.factor(df$Weather_Condition)
+df$Wind_Direction = as.factor(df$Wind_Direction)
+df$Amenity = as.factor(df$Amenity)
+df$Crossing = as.factor(df$Crossing)
+df$Junction = as.factor(df$Junction)
+df$Railway = as.factor(df$Railway)
+df$Station = as.factor(df$Station)
+df$Stop = as.factor(df$Stop)
+df$Traffic_Signal = as.factor(df$Traffic_Signal)
+df$Severity = as.factor(df$Severity)
+df$Sunrise_Sunset = as.factor(df$Sunrise_Sunset)
+df$Civil_Twilight = as.factor(df$Civil_Twilight)
+df$Nautical_Twilight = as.factor(df$Nautical_Twilight)
+df$Astronomical_Twilight = as.factor(df$Astronomical_Twilight)
+```
+
+
+```{r}
+#logistic regression
+#Use 80% of dataset as training set and remaining 20% as testing set
+train_sub = sample(c(TRUE,FALSE),nrow(df),replace = TRUE, prob=c(0.8,0.2))
+train = df[train_sub, ]
+test = df[-train_sub, ] 
+```
+
+```{r}
+#Multinomial Logistic-Without month
+mult.model<-multinom(Severity ~ Temperature.F. + Humidity... +Pressure.in. +Visibility.mi. + Wind_Direction + Wind_Speed.mph. + Precipitation.in. + Weather_Condition + Amenity + Crossing+ Junction + Railway + Station + Stop +Traffic_Signal + Sunrise_Sunset, data=train)
+summary(mult.model)
+```
+
+```{r}
+#pvalue-initial
+z <- summary(mult.model)$coefficients/summary(mult.model)$standard.errors
+p <- (1 - pnorm(abs(z), 0, 1))*2
+p
+```
+
+```{r}
+#RRs/odds-initial
+exp(coef(mult.model))
+```
+
+```{r}
+#fitted value
+head(pp<-fitted(mult.model))
+```
+
+```{r}
+#predict using test and accuracy
+pre_logistic<-predict(mult.model,newdata = test) 
+table(test$Severity,pre_logistic)
+```
+
+```{r}
+#confusion matrix
+conMat4<-confusionMatrix(factor(pre_logistic),factor(test$Severity))
+conMat4
+```
+
+```{r}
+#Multinomial Logistic-Without Wind direction
+mult.model1<-multinom(Severity ~ Temperature.F. + Humidity... +Pressure.in. +Visibility.mi. + Wind_Speed.mph. + Precipitation.in. + Weather_Condition + Amenity + Crossing+ Junction + Railway + Station + Stop +Traffic_Signal + Sunrise_Sunset, data=train)
+summary(mult.model1)
+```
+
+```{r}
+#pvalue-without wind direction
+z1 <- summary(mult.model1)$coefficients/summary(mult.model1)$standard.errors
+p1 <- (1 - pnorm(abs(z1), 0, 1))*2
+p1
+```
+
+```{r}
+#RRs/odds-model1
+exp(coef(mult.model1))
+```
+
+```{r}
+#predict using test and accuracy
+pre_logistic1<-predict(mult.model1,newdata = test) 
+table(test$Severity,pre_logistic1)
+```
+
+```{r}
+#confusion matrix
+conMat41<-confusionMatrix(factor(pre_logistic1),factor(test$Severity))
+conMat41
+```
+
+```{r}
+#Multinomial Logistic-With Month and without wind direction
+mult.model2<-multinom(Severity ~ Month + Temperature.F. + Humidity... +Pressure.in. +Visibility.mi. + Wind_Speed.mph. + Precipitation.in. + Weather_Condition + Amenity + Crossing+ Junction + Railway + Station + Stop +Traffic_Signal + Sunrise_Sunset, data=train)
+summary(mult.model2)
+```
+
+```{r}
+#pvalue-with month and without wind direction
+z2 <- summary(mult.model2)$coefficients/summary(mult.model2)$standard.errors
+p2 <- (1 - pnorm(abs(z2), 0, 1))*2
+p2
+```
+
+```{r}
+#RRs/odds-model2
+exp(coef(mult.model2))
+```
+
+```{r}
+#fitted value
+head(pp<-fitted(mult.model2))
+```
+
+```{r}
+#predict using test and accuracy
+pre_logistic2<-predict(mult.model2,newdata = test) 
+table(test$Severity,pre_logistic2)
+```
+
+```{r}
+#confusion matrix
+conMat42<-confusionMatrix(factor(pre_logistic2),factor(test$Severity))
+conMat42
+```
+
+#Decision Tree
+```{r}
+library(rpart)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+```
+
+```{r}
+#decision tree
+
+dt<-rpart(Severity ~ Month + Temperature.F. + Humidity... +Pressure.in. +Visibility.mi. + Wind_Speed.mph. + Precipitation.in. + Weather_Condition + Amenity + Crossing+ Junction + Railway + Station + Stop +Traffic_Signal + Sunrise_Sunset,data = train,method = "class",control =rpart.control(minsplit =1,minbucket=1, cp=0))
+
+#plot
+plot(dt,uniform = T,branch = 0,margin = 0.1,main="ID3")
+text(dt,use.n = T,col="blue",cex=0.2) 
+```
+```{r}
+# Make Predictions
+
+dt.Prediction <- predict(dt, newdata=test, type='class')
+
+results <- table(Prediction=dt.Prediction, Actual=test$Severity)
+
+results
+```
+
+```{r}
+Correct_Rate <- sum(diag(results)) / sum(results)
+
+Correct_Rate
+```
+```{r}
+# Find Suitable cp Value
+
+plotcp(dt)
+```
+
+```{r}
+# # Build CART Model with Tree Pruning
+
+dt <- prune(dt, cp=0.0001)
+
+rpart.plot(dt)
+```
+
+```{r}
+#variable importance
+dt$variable.importance
+```
+
+```{r}
+
+```
+
+```{r}
+#pick some variables
+#decision tree-the relationship between temperature, sunrise and pressure
+
+dt1<-rpart(Severity~ Temperature.F. + Pressure.in. + Sunrise_Sunset ,data = train ,method = "class",control =rpart.control(minsplit =1,minbucket=1,maxdepth = 8, cp=0.0001))
+
+#plot
+fancyRpartPlot(dt1)
+```
+
+```{r}
+asRules(dt1)
+```
+
+```{r}
+#pick some variables
+#decision tree-the relationship between severity and weather
+
+dt2<-rpart(Severity~ Weather_Condition+ Precipitation.in.,data = df,method = "class",control =rpart.control(minsplit =1,minbucket=1, maxdepth = 8, cp=0))
+
+#plot
+fancyRpartPlot(dt2)
+```
+
+```{r}
+asRules(dt2)
+```
+
+```{r}
+#pick some variables
+#decision tree-the relationship between severity and sign
+
+dt3<-rpart(Severity~ Amenity + Crossing+ Junction + Station + Stop + Traffic_Signal,data = df,method = "class",control =rpart.control(minsplit =1,minbucket=1,maxdepth = 8, cp=0))
+
+#plot
+fancyRpartPlot(dt3)
+```
+```{r}
+asRules(dt3)
+```
+
+model0
+```{r}
+dt00 <- rpart(Severity ~ Month + Temperature.F. + Humidity... +Pressure.in. +Visibility.mi. + Wind_Speed.mph. + Precipitation.in. + Weather_Condition + Amenity + Crossing+ Junction + Railway + Station + Stop +Traffic_Signal + Sunrise_Sunset, data=train, control=rpart.control(minsplit=2, cp=0.0001))
+
+summary(dt00)
+
+rpart.plot(dt00)
+```
+```{r}
+dt0 <- rpart(Severity ~ Month + Temperature.F. + Humidity... +Pressure.in. +Visibility.mi. + Wind_Speed.mph. + Precipitation.in. + Weather_Condition + Amenity + Crossing+ Junction + Railway + Station + Stop +Traffic_Signal + Sunrise_Sunset, data=train, control=rpart.control(minsplit=2,minbucket = 1, maxdepth = 8, cp=0.0001))
+
+summary(dt0)
+
+rpart.plot(dt0)
+```
+```{r}
+asRules(dt0)
+```
+
+```{r}
+dt.Prediction1 <- predict(dt00, newdata=test, type='class')
+
+as.data.frame(cbind(Prediction=as.character(dt.Prediction1),
+
+round(predict(dt00, newdata=test, type='prob'),3)))
+
+results <- table(Prediction=dt.Prediction1, Actual=test$Severity)
+
+results
+
+Correct_Rate <- sum(diag(results)) / sum(results)
+
+Correct_Rate
+```
+
+```{r}
+#variable importance
+dt00$variable.importance
+```
+
